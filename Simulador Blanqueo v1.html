@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Simulador de Blanqueo de Capitales VLLC para Argentina">
+    <title>Simulador de Blanqueo de Capitales VLLC! 🇦🇷</title>
+    
+    <!-- CSS Styles -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        input[type="text"], select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        #resultado, #explicacion {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #e7f3fe;
+            border-left: 5px solid #2196F3;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .language-selector {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+        }
+        .language-selector select {
+            padding: 5px;
+            font-size: 14px;
+            border-radius: 4px;
+            background-color: white;
+            border: 1px solid #ddd;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            padding-right: 25px;
+            background-image: url("data:image/svg+xml;utf8,<svg fill='black' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/><path d='M0 0h24v24H0z' fill='none'/></svg>");
+            background-repeat: no-repeat;
+            background-position-x: 100%;
+            background-position-y: 50%;
+        }
+
+        @media (max-width: 600px) {
+            .language-selector {
+                position: static;
+                text-align: right;
+                margin-bottom: 10px;
+            }
+            .container {
+                padding-top: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Language Selector -->
+        <div class="language-selector">
+            <select id="languageSelect" onchange="changeLanguage()">
+                <option value="es">Español</option>
+                <option value="en">English</option>
+            </select>
+        </div>
+
+        <h1 id="title">Simulador de Blanqueo de Capitales VLLC! 🇦🇷</h1>
+        <form id="blanqueoForm">
+            <label for="bienes" id="labelBienes">Valor de los bienes a declarar (USD):</label>
+            <input type="text" id="bienes" name="bienes" value="0" required>
+            
+            <label for="efectivo" id="labelEfectivo">Efectivo a declarar (USD):</label>
+            <input type="text" id="efectivo" name="efectivo" value="0" required>
+
+            <label for="etapa" id="labelEtapa">Etapa de adhesión:</label>
+            <select id="etapa" name="etapa">
+                <option value="1" id="etapa1">Etapa 1 (hasta 30/09/2024)</option>
+                <option value="2" id="etapa2">Etapa 2 (hasta 31/12/2024)</option>
+                <option value="3" id="etapa3">Etapa 3 (hasta 31/03/2025)</option>
+            </select>
+
+            <label for="accesoAnticipado" id="labelAcceso">¿Acceso anticipado a los bienes?</label>
+            <select id="accesoAnticipado" name="accesoAnticipado">
+                <option value="no" id="accesoNo">No</option>
+                <option value="si" id="accesoSi">Sí</option>
+            </select>
+        </form>
+        <div id="resultado"></div>
+        <div id="explicacion"></div>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        // Translations
+        const translations = {
+            es: {
+                title: "Simulador de Blanqueo de Capitales VLLC! 🇦🇷",
+                labelBienes: "Valor de los bienes a declarar (USD):",
+                labelEfectivo: "Efectivo a declarar (USD):",
+                labelEtapa: "Etapa de adhesión:",
+                etapa1: "Etapa 1 (hasta 30/09/2024)",
+                etapa2: "Etapa 2 (hasta 31/12/2024)",
+                etapa3: "Etapa 3 (hasta 31/03/2025)",
+                labelAcceso: "¿Acceso anticipado a los bienes?",
+                accesoNo: "No",
+                accesoSi: "Sí",
+                concept: "Concepto",
+                amount: "Monto (USD)",
+                penalty: "Penalidad (USD)",
+                assets: "Bienes",
+                cash: "Efectivo",
+                total: "Total",
+                explanation: "Explicación detallada:",
+                penaltyRate: "Tasa de penalidad aplicada:",
+                stage: "Etapa",
+                exemption: "Los primeros USD 100,000 están exentos de penalidad.",
+                earlyAccess: "Acceso anticipado:",
+                earlyAccessPenalty: "Se ha aplicado una penalidad adicional del 100% por acceso anticipado a los bienes. Para evitar esta penalidad adicional, los bienes deben mantenerse en el sistema financiero hasta el 31 de diciembre de 2025.",
+                noEarlyAccess: "No se ha aplicado penalidad por acceso anticipado. Para mantener este beneficio, los bienes deben permanecer en el sistema financiero hasta el 31 de diciembre de 2025.",
+                cashNote: "Nota sobre el efectivo:",
+                cashExplanation: "La penalidad se aplica al efectivo que excede el monto exento de USD 100,000 (proporcional al total declarado). Sin embargo, si se deposita en una Cuenta Especial de Regularización de Activos antes del 30 de septiembre de 2024 y se mantiene hasta el 31 de diciembre de 2025, no se pagará penalidad por el monto en efectivo.",
+                stagesBreakdown: "Desglose de las etapas:",
+                stageAdvice: "Cuanto antes se adhiera al régimen, menor será la penalidad aplicada."
+            },
+            en: {
+                title: "Simulador de Blanqueo de Capitales VLLC! 🇦🇷",
+                labelBienes: "Value of assets to declare (USD):",
+                labelEfectivo: "Cash to declare (USD):",
+                labelEtapa: "Adherence stage:",
+                etapa1: "Stage 1 (until 09/30/2024)",
+                etapa2: "Stage 2 (until 12/31/2024)",
+                etapa3: "Stage 3 (until 03/31/2025)",
+                labelAcceso: "Early access to assets?",
+                accesoNo: "No",
+                accesoSi: "Yes",
+                concept: "Concept",
+                amount: "Amount (USD)",
+                penalty: "Penalty (USD)",
+                assets: "Assets",
+                cash: "Cash",
+                total: "Total",
+                explanation: "Detailed explanation:",
+                penaltyRate: "Applied penalty rate:",
+                stage: "Stage",
+                exemption: "The first USD 100,000 are exempt from penalty.",
+                earlyAccess: "Early access:",
+                earlyAccessPenalty: "An additional 100% penalty has been applied for early access to assets. To avoid this additional penalty, assets must be kept in the financial system until December 31, 2025.",
+                noEarlyAccess: "No early access penalty has been applied. To maintain this benefit, assets must remain in the financial system until December 31, 2025.",
+                cashNote: "Note on cash:",
+                cashExplanation: "The penalty applies to cash exceeding the exempt amount of USD 100,000 (proportional to the total declared). However, if deposited in a Special Asset Regularization Account before September 30, 2024, and maintained until December 31, 2025, no penalty will be paid on the cash amount.",
+                stagesBreakdown: "Breakdown of stages:",
+                stageAdvice: "The earlier you adhere to the regime, the lower the penalty applied."
+            }
+        };
+
+        let currentLanguage = 'es';
+
+        // Utility Functions
+        function formatNumber(num) {
+            return Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+
+        function unformatNumber(str) {
+            return parseFloat(str.replace(/,/g, '')) || 0;
+        }
+
+        function formatInputs(input) {
+            input.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/[^\d]/g, '');
+                value = value.replace(/^0+/, '');
+                if (value === '') value = '0';
+                e.target.value = value.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                calcularPenalidad();
+            });
+        }
+
+        // Initialize inputs
+        formatInputs(document.getElementById('bienes'));
+        formatInputs(document.getElementById('efectivo'));
+
+        // Event Listeners
+        document.getElementById('etapa').addEventListener('change', calcularPenalidad);
+        document.getElementById('accesoAnticipado').addEventListener('change', calcularPenalidad);
+
+        // Main Calculation Function
+        function calcularPenalidad() {
+            const bienes = unformatNumber(document.getElementById('bienes').value);
+            const efectivo = unformatNumber(document.getElementById('efectivo').value);
+            const etapa = parseInt(document.getElementById('etapa').value);
+            const accesoAnticipado = document.getElementById('accesoAnticipado').value === 'si';
+            const total = bienes + efectivo;
+            
+            let tasaPenalidad;
+            switch(etapa) {
+                case 1: tasaPenalidad = 0.05; break;
+                case 2: tasaPenalidad = 0.10; break;
+                case 3: tasaPenalidad = 0.15; break;
+            }
+
+            let penalidadBienes = 0;
+            let penalidadEfectivo = 0;
+
+            if (total > 100000) {
+                const montoExcedente = total - 100000;
+                const proporcionBienes = bienes / total;
+                const proporcionEfectivo = efectivo / total;
+
+                penalidadBienes = montoExcedente * proporcionBienes * tasaPenalidad;
+                penalidadEfectivo = montoExcedente * proporcionEfectivo * tasaPenalidad;
+            }
+
+            if (accesoAnticipado) {
+                penalidadBienes *= 2;
+            }
+
+            actualizarResultado(bienes, efectivo, total, penalidadBienes, penalidadEfectivo);
+            actualizarExplicacion(tasaPenalidad, etapa, accesoAnticipado);
+        }
+
+        // UI Update Functions
+        function actualizarResultado(bienes, efectivo, total, penalidadBienes, penalidadEfectivo) {
+            let mensaje = `
+            <table>
+                <tr>
+                    <th>${translations[currentLanguage].concept}</th>
+                    <th>${translations[currentLanguage].amount}</th>
+                    <th>${translations[currentLanguage].penalty}</th>
+                </tr>
+                <tr>
+                    <td>${translations[currentLanguage].assets}</td>
+                    <td>${formatNumber(bienes)}</td>
+                    <td>${formatNumber(penalidadBienes)}</td>
+                </tr>
+                <tr>
+                    <td>${translations[currentLanguage].cash}</td>
+                    <td>${formatNumber(efectivo)}</td>
+                    <td>${formatNumber(penalidadEfectivo)}</td>
+                </tr>
+                <tr>
+                    <td><strong>${translations[currentLanguage].total}</strong></td>
+                    <td><strong>${formatNumber(total)}</strong></td>
+                    <td><strong>${formatNumber(penalidadBienes + penalidadEfectivo)}</strong></td>
+                </tr>
+            </table>`;
+
+            document.getElementById('resultado').innerHTML = mensaje;
+        }
+
+        function actualizarExplicacion(tasaPenalidad, etapa, accesoAnticipado) {
+            let explicacion = `
+            <h3>${translations[currentLanguage].explanation}</h3>
+            <p>${translations[currentLanguage].penaltyRate} ${tasaPenalidad * 100}% (${translations[currentLanguage].stage} ${etapa})</p>
+            <p>${translations[currentLanguage].exemption}</p>
+            `;
+
+            if (accesoAnticipado) {
+                explicacion += `<p><strong>${translations[currentLanguage].earlyAccess}</strong> ${translations[currentLanguage].earlyAccessPenalty}</p>`;
+            } else {
+                explicacion += `<p>${translations[currentLanguage].noEarlyAccess}</p>`;
+            }
+
+            explicacion += `<p><strong>${translations[currentLanguage].cashNote}</strong> ${translations[currentLanguage].cashExplanation}</p>`;
+
+            explicacion += `
+            <p><strong>${translations[currentLanguage].stagesBreakdown}</strong></p>
+            <ul>
+                <li>${translations[currentLanguage].stage} 1 (${translations[currentLanguage].etapa1}): 5% ${translations[currentLanguage].penaltyRate.toLowerCase()}</li>
+                <li>${translations[currentLanguage].stage} 2 (${translations[currentLanguage].etapa2}): 10% ${translations[currentLanguage].penaltyRate.toLowerCase()}</li>
+                <li>${translations[currentLanguage].stage} 3 (${translations[currentLanguage].etapa3}): 15% ${translations[currentLanguage].penaltyRate.toLowerCase()}</li>
+            </ul>
+            <p>${translations[currentLanguage].stageAdvice}</p>
+            `;
+
+            document.getElementById('explicacion').innerHTML = explicacion;
+        }
+
+        function changeLanguage() {
+            currentLanguage = document.getElementById('languageSelect').value;
+            updatePageLanguage();
+            calcularPenalidad();
+        }
+
+        function updatePageLanguage() {
+            document.getElementById('title').textContent = translations[currentLanguage].title;
+            document.getElementById('labelBienes').textContent = translations[currentLanguage].labelBienes;
+            document.getElementById('labelEfectivo').textContent = translations[currentLanguage].labelEfectivo;
+            document.getElementById('labelEtapa').textContent = translations[currentLanguage].labelEtapa;
+            document.getElementById('etapa1').textContent = translations[currentLanguage].etapa1;
+            document.getElementById('etapa2').textContent = translations[currentLanguage].etapa2;
+            document.getElementById('etapa3').textContent = translations[currentLanguage].etapa3;
+            document.getElementById('labelAcceso').textContent = translations[currentLanguage].labelAcceso;
+            document.getElementById('accesoNo').textContent = translations[currentLanguage].accesoNo;
+            document.getElementById('accesoSi').textContent = translations[currentLanguage].accesoSi;
+            
+            document.documentElement.lang = currentLanguage;
+        }
+
+        // Initialize the result
+        calcularPenalidad();
+    </script>
+</body>
+</html>
