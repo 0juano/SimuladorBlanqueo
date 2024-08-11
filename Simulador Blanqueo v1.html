@@ -6,7 +6,6 @@
     <meta name="description" content="Simulador de Blanqueo de Capitales VLLC para Argentina">
     <title>Simulador de Blanqueo de Capitales VLLC! 🇦🇷</title>
     
-    <!-- CSS Styles -->
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -88,12 +87,32 @@
             .container {
                 padding-top: 10px;
             }
+            input[type="text"], select {
+                font-size: 16px;
+            }
+        }
+
+        .button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        .button:hover {
+            background-color: #45a049;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Language Selector -->
         <div class="language-selector">
             <select id="languageSelect" onchange="changeLanguage()">
                 <option value="es">Español</option>
@@ -121,14 +140,14 @@
                 <option value="no" id="accesoNo">No</option>
                 <option value="si" id="accesoSi">Sí</option>
             </select>
+
+            <button type="button" id="resetButton" class="button" aria-label="Reiniciar formulario">Reiniciar</button>
         </form>
-        <div id="resultado"></div>
+        <div id="resultado" aria-live="polite"></div>
         <div id="explicacion"></div>
     </div>
 
-    <!-- JavaScript -->
     <script>
-        // Translations
         const translations = {
             es: {
                 title: "Simulador de Blanqueo de Capitales VLLC! 🇦🇷",
@@ -157,10 +176,13 @@
                 cashNote: "Nota sobre el efectivo:",
                 cashExplanation: "La penalidad se aplica al efectivo que excede el monto exento de USD 100,000 (proporcional al total declarado). Sin embargo, si se deposita en una Cuenta Especial de Regularización de Activos antes del 30 de septiembre de 2024 y se mantiene hasta el 31 de diciembre de 2025, no se pagará penalidad por el monto en efectivo.",
                 stagesBreakdown: "Desglose de las etapas:",
-                stageAdvice: "Cuanto antes se adhiera al régimen, menor será la penalidad aplicada."
+                stageAdvice: "Cuanto antes se adhiera al régimen, menor será la penalidad aplicada.",
+                penaltyPercentage: "La penalidad representa el {percentage}% del capital que está declarando para la amnistía.",
+                noCapitalDeclared: "",
+                resetButton: "Reiniciar"
             },
             en: {
-                title: "Simulador de Blanqueo de Capitales VLLC! 🇦🇷",
+                title: "Capital Amnesty Law Simulator VLLC! 🇦🇷",
                 labelBienes: "Value of assets to declare (USD):",
                 labelEfectivo: "Cash to declare (USD):",
                 labelEtapa: "Adherence stage:",
@@ -186,13 +208,15 @@
                 cashNote: "Note on cash:",
                 cashExplanation: "The penalty applies to cash exceeding the exempt amount of USD 100,000 (proportional to the total declared). However, if deposited in a Special Asset Regularization Account before September 30, 2024, and maintained until December 31, 2025, no penalty will be paid on the cash amount.",
                 stagesBreakdown: "Breakdown of stages:",
-                stageAdvice: "The earlier you adhere to the regime, the lower the penalty applied."
+                stageAdvice: "The earlier you adhere to the regime, the lower the penalty applied.",
+                penaltyPercentage: "The penalty represents {percentage}% of the capital you are providing for the amnesty.",
+                noCapitalDeclared: "",
+                resetButton: "Reset"
             }
         };
 
         let currentLanguage = 'es';
 
-        // Utility Functions
         function formatNumber(num) {
             return Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
         }
@@ -211,15 +235,13 @@
             });
         }
 
-        // Initialize inputs
         formatInputs(document.getElementById('bienes'));
         formatInputs(document.getElementById('efectivo'));
 
-        // Event Listeners
         document.getElementById('etapa').addEventListener('change', calcularPenalidad);
         document.getElementById('accesoAnticipado').addEventListener('change', calcularPenalidad);
+        document.getElementById('resetButton').addEventListener('click', resetForm);
 
-        // Main Calculation Function
         function calcularPenalidad() {
             const bienes = unformatNumber(document.getElementById('bienes').value);
             const efectivo = unformatNumber(document.getElementById('efectivo').value);
@@ -254,8 +276,14 @@
             actualizarExplicacion(tasaPenalidad, etapa, accesoAnticipado);
         }
 
-        // UI Update Functions
         function actualizarResultado(bienes, efectivo, total, penalidadBienes, penalidadEfectivo) {
+            const totalPenalidad = penalidadBienes + penalidadEfectivo;
+            let porcentajePenalidad = 0;
+            
+            if (total > 0) {
+                porcentajePenalidad = (totalPenalidad / total) * 100;
+            }
+            
             let mensaje = `
             <table>
                 <tr>
@@ -276,9 +304,13 @@
                 <tr>
                     <td><strong>${translations[currentLanguage].total}</strong></td>
                     <td><strong>${formatNumber(total)}</strong></td>
-                    <td><strong>${formatNumber(penalidadBienes + penalidadEfectivo)}</strong></td>
+                    <td><strong>${formatNumber(totalPenalidad)}</strong></td>
                 </tr>
             </table>`;
+
+            if (total > 0) {
+                mensaje += `<p>${translations[currentLanguage].penaltyPercentage.replace('{percentage}', porcentajePenalidad.toFixed(1))}</p>`;
+            }
 
             document.getElementById('resultado').innerHTML = mensaje;
         }
@@ -328,11 +360,48 @@
             document.getElementById('labelAcceso').textContent = translations[currentLanguage].labelAcceso;
             document.getElementById('accesoNo').textContent = translations[currentLanguage].accesoNo;
             document.getElementById('accesoSi').textContent = translations[currentLanguage].accesoSi;
+            document.getElementById('resetButton').textContent = translations[currentLanguage].resetButton;
             
             document.documentElement.lang = currentLanguage;
         }
 
-        // Initialize the result
+        function resetForm() {
+            document.getElementById('bienes').value = '0';
+            document.getElementById('efectivo').value = '0';
+            document.getElementById('etapa').value = '1';
+            document.getElementById('accesoAnticipado').value = 'no';
+            calcularPenalidad();
+        }
+
+        function validateInput(input) {
+            input.value = input.value.replace(/[^\d]/g, '');
+            if (input.value === '') input.value = '0';
+            input.value = parseInt(input.value).toLocaleString('en-US');
+        }
+
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        const debouncedCalculation = debounce(calcularPenalidad, 300);
+
+        document.getElementById('bienes').addEventListener('input', function(e) {
+            validateInput(e.target);
+            debouncedCalculation();
+        });
+        document.getElementById('efectivo').addEventListener('input', function(e) {
+            validateInput(e.target);
+            debouncedCalculation();
+        });
+
         calcularPenalidad();
     </script>
 </body>
